@@ -36,14 +36,18 @@ appengine-endpoints-tictactoe-java-maven</a></li>
 </p>
 
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Get it, and in one single command, have the Google App Engine SDK server running the sample</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<pre><code>
+$ git clone https://github.com/GoogleCloudPlatform/appengine-endpoints-tictactoe-java-maven.git
+$ cd appengine-endpoints-tictactoe-java-maven
+$ mvn appengine:devserver
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>The first time, the build will download the necessary artifacts automatically. Then, you can access the application with this
+  url: <a href="http://localhost:8080">
+http://localhost:8080</a>
+</p>
 
 <h3>Designer Templates</h3>
 
