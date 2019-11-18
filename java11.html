@@ -1,0 +1,126 @@
+<h1 id="appengine-java-11-runtime-faq">AppEngine Java 11 Runtime FAQ</h1>
+<p>The following questions apply to the AppEngine Java 11 standard runtime.</p>
+<h2 id="what-are-the-changes-between-the-java-8-and-java-11-standard-runtimes">What are the changes between the Java 8 and Java 11 standard runtimes?</h2>
+<p>Java11 is a <a href="https://cloud.google.com/appengine/docs/standard/runtimes">second gen</a> App Engine runtime, and does not support the App Engine APIs (<code>com.google.appengine.api.*</code>). Instead, you need to use the <a href="https://github.com/googleapis/google-cloud-java">Cloud Java APIs</a>.</p>
+<p>Java11 must be configured with an app.yaml file instead of an appengine-web.xml file. Java11 can execute any Java framework, as long as you package a Web Server listening to port 8080 or $PORT env variable value. For example, Java11 can run a Spring Boot UberJAR as is. Java11 can support WAR format, but you need to package your Jetty/Tomcat or other Java web servers with your application. We have some samples on how this is done on our GitHub samples site.</p>
+<h2 id="running-kotlin-apps-with-the-appengine-java-11-runtime">Running Kotlin apps with the AppEngine Java 11 runtime</h2>
+<p>You can run Kotlin apps on the AppEngine Java 11 runtime. You can find Kotlin code samples in the <a href="https://github.com/GoogleCloudPlatform/java-docs-samples/tree/master/appengine-java11/kotlin-ktor">GoogleCloudPlatform GitHub repository</a>.</p>
+<h2 id="using-intellij-idea-with-appengine">Using IntelliJ IDEA with AppEngine</h2>
+<p>You can IntelliJ IDEA Community and Ultimate Editions to develop and deploy apps to AppEngine. You can use IntelliJ IDEA Community by using the <a href="/appengine/docs/standard/java/tools/using-maven">Maven integration</a>.</p>
+<h2 id="what-is-the-minimal-app-engine-configuration-file">What is the minimal App Engine configuration file?</h2>
+<p>Along with your app, which can be a single JAR file, you can provide a 1 line <code>app.yaml</code> configuration file:</p>
+<pre class="prettyprint lang-yaml">
+runtime: java11
+</pre>
+
+<p>You can use <a href="/sdk">Cloud SDK</a> to generate that <code>app.yaml</code> file automatically by using the following command:</p>
+<pre class="lang-sh prettyprint">
+gcloud app deploy myjar.jar
+</pre>
+
+<p>In this case, the <code>myjar.jar</code> must have a <code>Main-Class</code> entry in the manifest, and all the classpath entries defined in the manifest <code>Class-Path:</code> must be in the correct relative location from the main myjar.jar. These relative dependencies will be deployed with the jar.</p>
+<p>For a Maven project, the standard location for the app.yaml is under <code>src/main/appengine</code> directory. The App Engine Maven plugin will create a correct <code>target/appengine-staging</code> directory containing your jar artifacts and this <code>app.yaml</code> file, ready for deployment.</p>
+<h2 id="can-i-use-the-google-cloud-debugger">Can I use the Google Cloud Debugger?</h2>
+<p>Yes, when you do not define an entrypoint in <code>app.yaml</code>, this is the one that is generated automatically:</p>
+<pre class="prettyprint lang-yaml">
+entrypoint: java -agentpath:/opt/cdbg/cdbg_java_agent.so=--log_dir=/var/log -jar yourjar.jar
+</pre>
+
+<p>If you define your own Java entrypoint in app.yaml, you will have to add these flags:</p>
+<pre class="lang-sh prettyprint">
+-agentpath:/opt/cdbg/cdbg_java_agent.so=--log_dir=/var/log
+</pre>
+
+<p>to your java command to use the Cloud Debugger.</p>
+<h2 id="using-the-google-cloud-profiler">Using the Google Cloud Profiler</h2>
+<p>The Google Cloud Profiler is not automatically enabled, but the agent is provided in the runtime environment. You can use the Google Cloud Profiler by adding these Java flags:</p>
+<pre class="lang-sh prettyprint">
+ -agentpath:/srv/cprof/profiler_java_agent.so=--logtostderr
+</pre>
+
+<p>The profiler agent is located under <code>/srv/cprof/profiler_java_agent.so</code>.</p>
+<h2 id="which-open-jdk-environment-is-used">Which Open JDK environment is used?</h2>
+<p>AppEngine runs Java 11 apps run in a container secured by gVisor on an up-to-date Ubuntu 18.04 Linux distribution and its supported openjdk-11-jdk package.</p>
+<p>AppEngine maintains the base image and updates the OpenJDK 11 package, without a need to redeploy your application. The app is available in the /srv directory.</p>
+<h2 id="serving-static-files">Serving static files</h2>
+<p>You can serve static files by using the <code>static_files</code> entry in your <code>app.yaml</code> configration file. For example, to serve a Spring Boot application, you can do the following steps before deployment:</p>
+<ol style="list-style-type: decimal">
+<li><p>Unpack the jar that contains all your app's classes (also known as a fat jar).</p></li>
+<li><p>Add the following entrypoint in your <code>app.yaml</code> configuration file:</p></li>
+</ol>
+<pre class="prettyprint" suppresswarning="true">
+entrypoint: java -noverify BOOT-INF/resources/:BOOT-INF/classes/:BOOT-INF/lib/* com.mycompany.myapp.YOUAPPCLASSNAME
+</pre>
+
+<p>You need to add the following to your <code>app.yaml</code> file to configure static resources when using an unpacked fat jar.</p>
+<pre class="prettyprint lang-yaml">
+handlers:
+- url: (/.*)
+  static_files: BOOT-INF/classes/static\1
+  upload: __NOT_USED__
+  require_matching_file: True
+  login: optional
+  secure: optional
+- url: /.*
+  script: unsused
+- url: /.*/
+  script: unused
+  login: optional
+  secure: optional
+- url: .*
+  script: unused
+  login: optional
+  secure: optional
+</pre>
+
+<p>This will serve all static files that are located in the BOOT-INF/classes/static directory.</p>
+<h2 id="removing-the-port-8080-warning-in-app-logs">Removing the port 8080 warning in app logs</h2>
+<p>If you see the following warnings in your app's log files:</p>
+<pre class="prettyprint" suppresswarning="true">
+"App is listening on port 8080, it should instead listen on the port defined by the PORT environment variable. As a consequence, nginx cannot be started. Performance may be degraded. Please listen on the port defined by the PORT environment variable."
+</pre>
+
+<p>Or:</p>
+<pre class="prettyprint" suppresswarning="true">
+"App is listening on port 8080. We recommend your app listen on the port defined by the PORT environment variable to take advantage of an NGINX layer on port 8080."
+</pre>
+
+<p>This log entry is created because your web application is listening to the hardcoded 8080 port instead of a <span class="math"><em>P</em><em>O</em><em>R</em><em>T</em><em>e</em><em>n</em><em>v</em><em>i</em><em>r</em><em>o</em><em>n</em><em>m</em><em>e</em><em>n</em><em>t</em><em>v</em><em>a</em><em>r</em><em>i</em><em>a</em><em>b</em><em>l</em><em>e</em><em>p</em><em>r</em><em>o</em><em>v</em><em>i</em><em>d</em><em>e</em><em>d</em><em>a</em><em>t</em><em>e</em><em>x</em><em>e</em><em>c</em><em>u</em><em>t</em><em>i</em><em>o</em><em>n</em>.<em>B</em><em>y</em><em>u</em><em>s</em><em>i</em><em>n</em><em>g</em><em>t</em><em>h</em><em>e</em></span>PORT environment variable, which is 8081, AppEngine runs an NGINX layer that can do HTTP response compression.</p>
+<h2 id="using-graalvm-executables">Using GraalVM executables</h2>
+<p>The AppEngine standard Java 11 runtime supports GraalVM executables. Once you have compiled your Java 11 app using GraalVM, you can use the <code>entrypoint</code> setting in your <code>app.yaml</code> file to point to the executable.</p>
+<p>For example, an executable with the filename <code>myexecutable</code> could have the following<code>app.yaml</code> configuration file:</p>
+<pre class="prettyprint lang-yaml">
+runtime: java11
+entrypoint: ./myexecutable
+</pre>
+
+<p>Note: some Google Cloud client libraries need extra GraalVM configuration in order to work correctly. For more information, see <a href="https://github.com/oracle/graal/blob/master/substratevm/CONFIGURE.md">GraalVM agent configuration</a>.</p>
+<h2 id="using-java-frameworks-with-the-java-11-runtime">Using Java frameworks with the Java 11 runtime</h2>
+<p>We have added <a href="https://github.com/GoogleCloudPlatform/java-docs-samples/tree/master/appengine-java11">code samples</a> for SpringBoot, Helidon, Quarkus, Micronaut, Jetty, SparkJava, Vert.x, and Kotlin Ktor.</p>
+<p>You are not limited to these frameworks and are encouraged to try your preferred one, like Grails, Blade, Play!, Vaadin or <a href="https://www.jhipster.tech/gcp/">jHipster</a>.</p>
+<h2 id="traffic-splitting-between-java-8-and-java-11-apps">Traffic splitting between Java 8 and Java 11 apps</h2>
+<p>AppEngine supports traffic splitting within each service version between Java 8 and Java 11 runtimes. You can find out more about traffic splitting by seeing <a href="/appengine/docs/standard/java11/splitting-traffic">Splitting traffic</a>.</p>
+<h2 id="what-metadata-server-features-are-supported-in-the-appengine-java-11-runtime">What Metadata server features are supported in the AppEngine Java 11 runtime?</h2>
+<p>The AppEngine Java 11 runtime supports the following <a href="/compute/docs/storing-retrieving-metadata">Metadata server</a> urls:</p>
+<pre><code>/computeMetadata/v1/project/numeric-project-id
+/computeMetadata/v1/project/project-id
+/computeMetadata/v1/instance/zone
+/computeMetadata/v1/instance/service-accounts/default/aliases
+/computeMetadata/v1/instance/service-accounts/default/email
+/computeMetadata/v1/instance/service-accounts/default/scopes
+/computeMetadata/v1/instance/service-accounts/default/token
+/computeMetadata/v1/instance/service-accounts/{account}/aliases
+/computeMetadata/v1/instance/service-accounts/{account}/email
+/computeMetadata/v1/instance/service-accounts/{account}/scopes
+/computeMetadata/v1/instance/service-accounts/{account}/token
+/computeMetadata/v1beta1/project/numeric-project-id
+/computeMetadata/v1beta1/project/project-id
+/computeMetadata/v1beta1/instance/zone
+/computeMetadata/v1beta1/instance/service-accounts/default/aliases
+/computeMetadata/v1beta1/instance/service-accounts/default/email
+/computeMetadata/v1beta1/instance/service-accounts/default/scopes
+/computeMetadata/v1beta1/instance/service-accounts/default/token
+/computeMetadata/v1beta1/instance/service-accounts/{account}/aliases
+/computeMetadata/v1beta1/instance/service-accounts/{account}/email
+/computeMetadata/v1beta1/instance/service-accounts/{account}/scopes
+/computeMetadata/v1beta1/instance/service-accounts/{account}/token</code></pre>
