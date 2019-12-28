@@ -79,10 +79,10 @@ the runtime environment. You can use the Google Cloud Profiler by adding these J
 flags:
 
 <pre class="lang-sh prettyprint">
- -agentpath:/srv/cprof/profiler_java_agent.so=--logtostderr
+ -agentpath:/opt/cprof/profiler_java_agent.so=--logtostderr
 </pre>
 
-The profiler agent is located under `/srv/cprof/profiler_java_agent.so`.
+The profiler agent is located under `/opt/cprof/profiler_java_agent.so`.
 
 ## Which Open JDK environment is used?
 
