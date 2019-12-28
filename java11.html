@@ -35,10 +35,10 @@ entrypoint: java -agentpath:/opt/cdbg/cdbg_java_agent.so=--log_dir=/var/log -jar
 <h2 id="using-the-google-cloud-profiler">Using the Google Cloud Profiler</h2>
 <p>The Google Cloud Profiler is not automatically enabled, but the agent is provided in the runtime environment. You can use the Google Cloud Profiler by adding these Java flags:</p>
 <pre class="lang-sh prettyprint">
- -agentpath:/srv/cprof/profiler_java_agent.so=--logtostderr
+ -agentpath:/opt/cprof/profiler_java_agent.so=--logtostderr
 </pre>
 
-<p>The profiler agent is located under <code>/srv/cprof/profiler_java_agent.so</code>.</p>
+<p>The profiler agent is located under <code>/opt/cprof/profiler_java_agent.so</code>.</p>
 <h2 id="which-open-jdk-environment-is-used">Which Open JDK environment is used?</h2>
 <p>AppEngine runs Java 11 apps run in a container secured by gVisor on an up-to-date Ubuntu 18.04 Linux distribution and its supported openjdk-11-jdk package.</p>
 <p>AppEngine maintains the base image and updates the OpenJDK 11 package, without a need to redeploy your application. The app is available in the /srv directory.</p>
